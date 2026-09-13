@@ -1,0 +1,35 @@
+name: Check CPU Info
+
+on:
+  workflow_dispatch: # 手動で実行できるように設定
+  push:
+    branches: [ main ]
+
+jobs:
+  check-cpu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get CPU Model and Core Count
+        run: |
+          echo "=== CPU Information ==="
+          
+          # 1. CPU型番の取得 (1行目だけ表示)
+          CPU_MODEL=$(grep "model name" /proc/cpuinfo | head -n 1 | cut -d ':' -f 2 | xargs)
+          echo "CPU Model: $CPU_MODEL"
+          
+          # 2. アクティブなコア数（論理プロセッサ数）の取得
+          CORE_COUNT=$(nproc)
+          echo "Active Logical Cores: $CORE_COUNT"
+          
+          # 3. 物理コア数も参考までに取得したい場合
+          PHYSICAL_CORES=$(lscpu -p | grep -v "^#" | sort -u -t, -k 2,4 | wc -l)
+          echo "Physical Cores: $PHYSICAL_CORES"
+          
+          echo "========================="
+          
+          # uv の並列処理などに役立てるためのメモ
+          echo "::notice::UV can use up to $CORE_COUNT threads for compilation/installation."
